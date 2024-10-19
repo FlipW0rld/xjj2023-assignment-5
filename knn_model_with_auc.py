@@ -4,37 +4,29 @@ from sklearn.metrics import roc_auc_score
 
 # ------------------- Data Preprocessing -------------------
 
-# Load data
 train_df = pd.read_csv('train.csv')
 test_df = pd.read_csv('test.csv')
 
-# Check for missing values
 print("Missing values in train data:")
 print(train_df.isnull().sum())
 print("\nMissing values in test data:")
 print(test_df.isnull().sum())
 
-# Map Gender to numerical values
 gender_mapping = {'Male': 1, 'Female': 0}
 train_df['Gender'] = train_df['Gender'].map(gender_mapping)
 test_df['Gender'] = test_df['Gender'].map(gender_mapping)
 
-# One-hot encode Geography
 geography_train = pd.get_dummies(train_df['Geography'], prefix='Geography')
 geography_test = pd.get_dummies(test_df['Geography'], prefix='Geography')
 
-# Align the train and test geography dataframes
 geography_train, geography_test = geography_train.align(geography_test, join='outer', axis=1, fill_value=0)
 
-# Drop original Geography column
 train_df = train_df.drop('Geography', axis=1)
 test_df = test_df.drop('Geography', axis=1)
 
-# Concatenate the one-hot encoded geography data
 train_df = pd.concat([train_df, geography_train], axis=1)
 test_df = pd.concat([test_df, geography_test], axis=1)
 
-# Standardize numerical features
 numerical_features = ['CreditScore', 'Age', 'Tenure', 'Balance', 'NumOfProducts', 'EstimatedSalary']
 
 means = train_df[numerical_features].mean()
@@ -43,14 +35,11 @@ stds = train_df[numerical_features].std()
 train_df[numerical_features] = (train_df[numerical_features] - means) / stds
 test_df[numerical_features] = (test_df[numerical_features] - means) / stds
 
-# Save test IDs
 test_ids = test_df['id']
 
-# Drop unnecessary columns
 train_df = train_df.drop(['CustomerId', 'Surname', 'id'], axis=1)
 test_df = test_df.drop(['CustomerId', 'Surname', 'id'], axis=1)
 
-# Split features and target
 X = train_df.drop('Exited', axis=1).values
 y = train_df['Exited'].values
 X_test = test_df.values
@@ -102,13 +91,11 @@ for k in k_values:
         X_train_cv, X_val_cv = X[train_index], X[val_index]
         y_train_cv, y_val_cv = y[train_index], y[val_index]
 
-        # Predict probabilities for validation set
         y_val_preds = []
         for test_instance in X_val_cv:
             prob = predict_probability(X_train_cv, y_train_cv, test_instance, k)
             y_val_preds.append(prob)
 
-        # Calculate AUC-ROC score
         auc = roc_auc_score(y_val_cv, y_val_preds)
         auc_scores.append(auc)
 
@@ -116,7 +103,6 @@ for k in k_values:
     mean_auc_scores.append(mean_auc)
     print(f"k={k}, Mean AUC-ROC: {mean_auc}")
 
-# Select the best k
 best_k_index = np.argmax(mean_auc_scores)
 best_k = k_values[best_k_index]
 print(f"\nBest k: {best_k} with Mean AUC-ROC: {mean_auc_scores[best_k_index]}")
